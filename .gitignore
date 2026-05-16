@@ -1,0 +1,36 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.build/
+htmlcov/
+instance/
+.webassets-cache
+pip-log.txt
+pip-delete-this-directory.txt
+python-debug.log
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.pytest_cache
+dist/
+build/
+.eggs/
+.eggs
+*.egg-info/
+*.egg
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# log files
+*.log

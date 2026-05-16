@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zepto Inventory Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.0.0/dist/chartjs-chart-treemap.min.js"></script>
+    <script src="https://unpkg.com/@sgratzl/chartjs-chart-boxplot@4.2.4/build/index.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-mark">Z</div>
+            <div>
+                <div class="logo-text">Zepto</div>
+                <div class="logo-sub">Analytics</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#overview" class="nav-item active">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                Overview
+            </a>
+            <a href="#pricing" class="nav-item">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Pricing
+            </a>
+            <a href="#inventory" class="nav-item">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                Inventory
+            </a>
+            <a href="#category" class="nav-item">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h7"/><path d="M17 14v7m0-3.5H14"/></svg>
+                Categories
+            </a>
+            <a href="#value" class="nav-item">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><path d="M17 7H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                Value/Gram
+            </a>
+        </nav>
+        <div class="sidebar-status">
+            <span class="pulse-dot"></span>
+            <span>Live Data</span>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <!-- PAGE HEADER -->
+        <header class="page-header">
+            <div class="page-header-left">
+                <h1 class="page-title">Product Catalog</h1>
+                <p class="page-subtitle">Real-time insights into pricing, inventory health, and value analytics</p>
+            </div>
+            <div class="header-meta">
+                <div class="last-updated" id="lastUpdated">—</div>
+            </div>
+        </header>
+
+        <!-- GLOBAL FILTERS -->
+        <div class="filters-bar sticky-filters" id="filtersBar">
+            <div class="filters-inner">
+                <div class="filter-item">
+                    <label class="filter-label">Category</label>
+                    <select id="filterCategory" class="filter-select" multiple size="1">
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Stock</label>
+                    <select id="filterStock" class="filter-select">
+                        <option value="All">All</option>
+                        <option value="In Stock">In Stock</option>
+                        <option value="Out of Stock">Out of Stock</option>
+                    </select>
+                </div>
+                <div class="filter-item filter-range">
+                    <label class="filter-label">Max MRP <span class="range-val">₹<span id="mrpMaxVal">—</span></span></label>
+                    <input type="range" id="filterMrpMax" class="filter-slider" min="0" max="1000" step="10" value="1000">
+                </div>
+                <div class="filter-item filter-range">
+                    <label class="filter-label">Max Discount <span class="range-val"><span id="discMaxVal">—</span>%</span></label>
+                    <input type="range" id="filterDiscMax" class="filter-slider" min="0" max="100" step="1" value="100">
+                </div>
+                <div class="filter-item filter-range">
+                    <label class="filter-label">Max Weight <span class="range-val"><span id="wtMaxVal">—</span>g</span></label>
+                    <input type="range" id="filterWtMax" class="filter-slider" min="0" max="10000" step="50" value="10000">
+                </div>
+                <div class="filter-item filter-search">
+                    <label class="filter-label">Search</label>
+                    <div class="search-wrap">
+                        <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <input type="text" id="filterSearch" class="filter-input" placeholder="SKU or name…">
+                    </div>
+                </div>
+                <button id="applyFilters" class="btn-apply">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    Apply
+                </button>
+                <button id="resetFilters" class="btn-reset">Reset</button>
+            </div>
+        </div>
+
+        <!-- LOADING OVERLAY -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <span>Fetching data…</span>
+        </div>
+
+        <!-- KPI CARDS -->
+        <section id="overview" class="kpi-grid">
+            <div class="kpi-card kpi-purple">
+                <div class="kpi-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Total SKUs</div>
+                    <div class="kpi-value" id="kpiSkus">—</div>
+                    <div class="kpi-hint">Matching filters</div>
+                </div>
+            </div>
+            <div class="kpi-card kpi-red">
+                <div class="kpi-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Out-of-Stock</div>
+                    <div class="kpi-value" id="kpiOos">—</div>
+                    <div class="kpi-hint">% unavailable</div>
+                </div>
+            </div>
+            <div class="kpi-card kpi-amber">
+                <div class="kpi-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Avg Discount</div>
+                    <div class="kpi-value" id="kpiDisc">—</div>
+                    <div class="kpi-hint">Across visible items</div>
+                </div>
+            </div>
+            <div class="kpi-card kpi-green">
+                <div class="kpi-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Potential Revenue</div>
+                    <div class="kpi-value" id="kpiRev">—</div>
+                    <div class="kpi-hint">In-stock value</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: DISCOUNT & PRICING -->
+        <section id="pricing" class="dash-section">
+            <div class="section-header">
+                <div class="section-tag">01</div>
+                <div>
+                    <h2 class="section-title">Discount &amp; Pricing Analysis</h2>
+                    <p class="section-desc">Discount depth distribution, margin erosion, and pricing correlation</p>
+                </div>
+            </div>
+
+            <div class="charts-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">Discount % Distribution</div>
+                            <div class="chart-insight">Where do most SKUs cluster in discount depth?</div>
+                        </div>
+                        <div class="sql-pill" title="SELECT FLOOR(discountpercent/10)*10 AS bucket, COUNT(*) FROM zepto GROUP BY bucket ORDER BY bucket">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-280"><canvas id="chart1" role="img" aria-label="Histogram of discount percent distribution"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">Avg MRP vs Selling Price by Category</div>
+                            <div class="chart-insight">Which categories lose the most margin?</div>
+                        </div>
+                        <div class="sql-pill" title="SELECT category, AVG(mrp), AVG(discountedsellingprice) FROM zepto GROUP BY category">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-280"><canvas id="chart2" role="img" aria-label="Grouped bar chart MRP vs selling price"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-card mt-20">
+                <div class="chart-card-header">
+                    <div>
+                        <div class="chart-title">MRP vs Discount % — Scatter</div>
+                        <div class="chart-insight">Do higher MRP products receive deeper discounts?</div>
+                    </div>
+                    <div class="sql-pill" title="SELECT name, mrp, discountpercent, category FROM zepto WHERE weightingms > 0">SQL</div>
+                </div>
+                <div class="chart-wrap h-340"><canvas id="chart3" role="img" aria-label="Scatter plot of MRP vs discount percent"></canvas></div>
+            </div>
+        </section>
+
+        <!-- SECTION: INVENTORY -->
+        <section id="inventory" class="dash-section">
+            <div class="section-header">
+                <div class="section-tag">02</div>
+                <div>
+                    <h2 class="section-title">Inventory &amp; Stock Health</h2>
+                    <p class="section-desc">Availability ratios, stockout risk, and revenue potential by category</p>
+                </div>
+            </div>
+
+            <div class="charts-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">In-Stock vs Out-of-Stock Ratio</div>
+                            <div class="chart-insight">Overall catalog availability split</div>
+                        </div>
+                        <div class="sql-pill" title="SELECT outofstock, COUNT(*) FROM zepto GROUP BY outofstock">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-280"><canvas id="chart4" role="img" aria-label="Donut chart of in-stock vs out-of-stock ratio"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">Out-of-Stock Rate by Category</div>
+                            <div class="chart-insight">Which categories have worst availability?</div>
+                        </div>
+                        <div class="sql-pill" title="SELECT category, SUM(outofstock), COUNT(*) FROM zepto GROUP BY category">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-280"><canvas id="chart5" role="img" aria-label="Stacked bar chart of stock status by category"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-card mt-20">
+                <div class="chart-card-header">
+                    <div>
+                        <div class="chart-title">Low Stock SKUs — Stockout Risk</div>
+                        <div class="chart-insight">Top 20 products closest to going out of stock</div>
+                    </div>
+                    <div class="filter-inline">
+                        <label class="filter-label">Threshold</label>
+                        <input type="number" id="lowStockThreshold" value="20" min="1" max="200" class="threshold-input">
+                    </div>
+                    <div class="sql-pill" title="SELECT name, availablequantity FROM zepto WHERE outofstock=false AND availablequantity < threshold ORDER BY availablequantity ASC LIMIT 20">SQL</div>
+                </div>
+                <div class="chart-wrap h-400"><canvas id="chart6" role="img" aria-label="Horizontal bar chart of low stock SKUs"></canvas></div>
+            </div>
+
+            <div class="chart-card mt-20">
+                <div class="chart-card-header">
+                    <div>
+                        <div class="chart-title">Potential Revenue by Category</div>
+                        <div class="chart-insight">Which categories hold the most earnable inventory value?</div>
+                    </div>
+                    <div class="sql-pill" title="SELECT category, SUM(discountedsellingprice * availablequantity) FROM zepto WHERE outofstock=false GROUP BY category">SQL</div>
+                </div>
+                <div class="chart-wrap h-360"><canvas id="chart7" role="img" aria-label="Treemap of potential revenue by category"></canvas></div>
+            </div>
+        </section>
+
+        <!-- SECTION: CATEGORY INTEL -->
+        <section id="category" class="dash-section">
+            <div class="section-header">
+                <div class="section-tag">03</div>
+                <div>
+                    <h2 class="section-title">Category Intelligence</h2>
+                    <p class="section-desc">SKU breadth, discount aggressiveness, and range benchmarking</p>
+                </div>
+            </div>
+
+            <div class="charts-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">SKU Count per Category</div>
+                            <div class="chart-insight">Which categories have the widest product range?</div>
+                        </div>
+                        <div class="sql-pill" title="SELECT category, COUNT(sku_id) FROM zepto GROUP BY category ORDER BY COUNT DESC">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-320"><canvas id="chart8" role="img" aria-label="Horizontal bar chart of SKU count per category"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">Avg Discount % by Category</div>
+                            <div class="chart-insight">Which categories are most aggressively discounted?</div>
+                        </div>
+                        <div class="sql-pill" title="SELECT category, ROUND(AVG(discountpercent),1) FROM zepto GROUP BY category ORDER BY AVG DESC">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-320"><canvas id="chart9" role="img" aria-label="Radar chart of average discount by category"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: VALUE PER GRAM -->
+        <section id="value" class="dash-section">
+            <div class="section-header">
+                <div class="section-tag">04</div>
+                <div>
+                    <h2 class="section-title">Value per Gram Analysis</h2>
+                    <p class="section-desc">Price efficiency by weight — best and worst value SKUs across categories</p>
+                </div>
+            </div>
+
+            <div class="charts-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">Price/Gram Distribution by Category</div>
+                            <div class="chart-insight">Which categories offer the best value per gram?</div>
+                        </div>
+                        <div class="sql-pill" title="SELECT category, discountedsellingprice/NULLIF(weightingms,0) AS ppg FROM zepto WHERE weightingms>0">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-320"><canvas id="chart10" role="img" aria-label="Box plot of price per gram distribution"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-title">Best vs Worst Value SKUs</div>
+                            <div class="chart-insight">Cheapest and priciest products per gram per category</div>
+                        </div>
+                        <button id="toggleBestWorst" class="toggle-btn" data-mode="best">
+                            <span class="toggle-dot"></span>
+                            <span id="toggleLabel">Best Value</span>
+                        </button>
+                        <div class="sql-pill" title="RANK() OVER (PARTITION BY category ORDER BY price_per_gram ASC/DESC)">SQL</div>
+                    </div>
+                    <div class="chart-wrap h-320"><canvas id="chart11" role="img" aria-label="Horizontal bar chart of best or worst value SKUs"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="dash-footer">
+            Zepto Analytics Dashboard · Data sourced from PostgreSQL · Built with Chart.js
+        </footer>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
