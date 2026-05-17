@@ -6,10 +6,11 @@ Optimised: connection pooling, single-connection-per-request, batched queries
 import traceback
 from flask import Flask, render_template, request, jsonify, g
 from db import get_db_connection, release_db_connection
+from whitenoise import WhiteNoise
 
 app = Flask(__name__)
-
-
+# Use Whitenoise to serve static files reliably in production
+app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/')
 # ── Per-request connection lifecycle ──────────────────────────
 
 @app.before_request
