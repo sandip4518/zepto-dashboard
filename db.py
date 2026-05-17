@@ -16,12 +16,23 @@ def get_db_connection():
     if db_url:
         return psycopg2.connect(db_url, sslmode=os.getenv("DB_SSLMODE", "require"))
 
-    conn = psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "zepto_SQL_Analysis"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASS", "4518"),
-        port=os.getenv("DB_PORT", "5432"),
-    )
+    # Fallback: require individual DB_* env vars (no hardcoded defaults)
+    host = os.getenv("DB_HOST")
+    db_name = os.getenv("DB_NAME")
+    user = os.getenv("DB_USER")
+    password = os.getenv("DB_PASS")
+    port = os.getenv("DB_PORT", "5432")
 
-    return conn
+    if not all([host, db_name, user, password]):
+        raise RuntimeError(
+            "No DATABASE_URL or DB_HOST/DB_NAME/DB_USER/DB_PASS found in .env. "
+            "Please configure your database credentials."
+        )
+
+    return psycopg2.connect(
+        host=host,
+        database=db_name,
+        user=user,
+        password=password,
+        port=port,
+    )
