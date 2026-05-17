@@ -93,3 +93,22 @@ Then open `http://127.0.0.1:5000/` in your browser.
 - If data does not load, verify PostgreSQL connectivity and the `zepto` table schema.
 - If the dashboard fails to start, ensure dependencies are installed and Flask is available.
 - For SQL debugging, inspect the routes in `app.py` and database helper logic in `db.py`.
+
+## Deploying with Neon (Postgres) and Render
+
+1. Create a Neon Postgres project at https://neon.tech and create a database branch.
+2. Copy the provided Postgres connection string (the `postgres://...` URL).
+3. On Render, open your Web Service settings and set an environment variable:
+
+	- `DATABASE_URL` = your Neon Postgres URL
+
+4. Set the Start Command on Render to:
+
+	`gunicorn app:app`
+
+5. Ensure `requirements.txt` includes `gunicorn` (already added).
+6. Import your `zepto` table/schema/data into the Neon database (use Neon SQL editor or `psql`).
+
+Notes:
+- The app will prefer `DATABASE_URL` (used on Render). Locally you can use `.env` with `DB_*` variables.
+- The `db.py` helper configures `sslmode=require` by default when using `DATABASE_URL`.
